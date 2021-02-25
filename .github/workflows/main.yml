@@ -1,0 +1,35 @@
+name: 萬事通
+
+on:
+  workflow_dispatch:
+
+env:
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+  DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+  DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+  NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+jobs:
+  archive:
+    name: learning ten thousand things.
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '3.1.x'
+      - name: fetch latest DiscordChatExporter and unzip it
+        run: |
+          curl -LO https://github.com/Tyrrrz/DiscordChatExporter/releases/latest/download/DiscordChatExporter.CLI.zip
+          unzip DiscordChatExporter.CLI.zip -d DiscordChatExporter.CLI
+      - name: creating folder named `archive` to stash stuff in it
+        run: mkdir archive
+      - name: exporting $DISCORD_CHANNEL_ID to .json file
+        run: dotnet DiscordChatExporter.CLI/DiscordChatExporter.Cli.dll export --token $DISCORD_TOKEN --channel $DISCORD_CHANNEL_ID --media --format Json --output archive/%g/%c.json
+      - name: deploy the website
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy #--dir=archive
